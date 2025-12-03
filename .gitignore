@@ -1,0 +1,21 @@
+# Librerías externas (repos separados)
+libs/uart/
+
+# Archivos compilados
+build/
+*.o
+*.bin
+
+# Archivos generados
+output/
+
+# Archivos temporales
+*.bak
+*.backup
+*.old
+*.tmp
+
+# Editor
+.vscode/
+*.swp
+*~
