@@ -1,32 +1,68 @@
-# 6502 Template - Tang Nano 9K
+# Monitor 6502 - Tang Nano 9K
 
-🚀 **Proyecto base/template** para desarrollo en CPU 6502 sobre FPGA Tang Nano 9K.
+🚀 **Monitor/Debugger interactivo** para CPU 6502 sobre FPGA Tang Nano 9K via UART.
 
-Usa este proyecto como punto de partida para crear tus propias aplicaciones con el procesador 6502.
+Permite programar, depurar y ejecutar código en tiempo real a través de una interfaz de comandos estilo Wozmon.
 
 ## Características
 
 - ✅ CPU 6502 @ 3.375 MHz en FPGA Tang Nano 9K
-- ✅ Control de 6 LEDs 
-- ✅ Comunicación UART para debug
+- ✅ Monitor interactivo via UART
+- ✅ Lectura/escritura de memoria
+- ✅ Carga de programas en hexadecimal
+- ✅ Ejecución de código en cualquier dirección
+- ✅ Desensamblador básico
+- ✅ Análisis de memoria RAM (scan, test, mapa visual)
+- ✅ Control de 6 LEDs
 - ✅ Compilación con cc65
-- ✅ Estructura lista para expandir
+
+## Comandos del Monitor
+
+Todo en **HEXADECIMAL** (addr=4 dígitos)
+
+### Básicos
+| Comando | Descripción |
+|---------|-------------|
+| `R addr` | Leer byte de memoria |
+| `W addr val` | Escribir byte |
+| `D addr len` | Dump memoria (hex+ASCII) |
+| `L addr` | Cargar bytes hex (terminar con `.`) |
+| `G addr` | Ejecutar código (GO) |
+| `F addr len val` | Llenar memoria |
+| `M addr [n]` | Desensamblar |
+
+### Análisis de Memoria
+| Comando | Descripción |
+|---------|-------------|
+| `I` | Info mapa de memoria |
+| `S addr len` | Escanear memoria libre |
+| `T addr len` | Test de RAM |
+| `V` | Vista visual de RAM |
+
+### Otros
+| Comando | Descripción |
+|---------|-------------|
+| `H` / `?` | Ayuda |
+| `Q` | Reiniciar monitor |
 
 ## Hardware Soportado
 
 | Componente | Dirección | Descripción |
 |------------|-----------|-------------|
-| PORT_SALIDA_LED | $C001 | Puerto de salida para 6 LEDs (bits 0-5) |
-| CONF_PORT_SALIDA_LED | $C003 | Configuración: 0=salida, 1=entrada |
-| UART | - | Comunicación serial para debug |
+| LEDs | $C001 | Puerto de salida para 6 LEDs (bits 0-5) |
+| LED Config | $C003 | Configuración: 0=salida, 1=entrada |
+| UART Data | $C020 | TX/RX datos |
+| UART Status | $C021 | Estado (TX_READY, RX_VALID) |
 
 ## Estructura del Proyecto
 
 ```
 ├── src/
-│   ├── main.c              # Programa principal (edita aquí tu código)
+│   ├── main.c              # Programa principal
 │   └── simple_vectors.s    # Vectores de interrupción 6502
-├── libs/                   # Librerías externas (UART, I2C, etc.)
+├── libs/
+│   ├── monitor/            # Monitor interactivo (incluido)
+│   └── uart/               # Librería UART (repo separado)
 ├── config/
 │   └── fpga.cfg            # Configuración del linker cc65
 ├── scripts/
@@ -36,46 +72,43 @@ Usa este proyecto como punto de partida para crear tus propias aplicaciones con 
 └── makefile                # Compilación con cc65
 ```
 
-## Cómo Usar este Template
+## Instalación
 
-1. **Clona o descarga** este repositorio
-2. **Edita** `src/main.c` con tu código
-3. **Agrega librerías** en la carpeta `libs/` según necesites
-4. **Compila** con `make`
-5. **Carga** `output/rom.vhd` en tu proyecto FPGA
-
-## Compilación
-
-### Requisitos previos
+### Requisitos
 - [cc65](https://cc65.github.io/) instalado en `D:\cc65`
 - Python 3 para el script de conversión
+- Librería UART en `libs/uart/` (clonar de repo separado)
 
 ### Compilar
 ```bash
 make
 ```
 
-### Limpiar
-```bash
-make clean
-```
-
 ### Cargar en FPGA
 Copiar `output/rom.vhd` al proyecto FPGA y sintetizar.
 
-## Ejemplo Incluido
+## Ejemplo de Uso
 
-El `main.c` incluye un ejemplo básico que:
-- Inicializa el puerto de LEDs
-- Inicializa la UART
-- Alterna el encendido/apagado de LEDs
-- Envía mensajes por UART para debug
+```
+##### 6502 SYSTEM READY #####
+Iniciando Monitor...
 
-```c
-while (1) {
-    encendido(10000);   // Enciende LEDs + mensaje UART
-    apagado(10000);     // Apaga LEDs + mensaje UART
-}
+================================
+  MONITOR 6502 v1.0
+  Tang Nano 9K @ 3.375 MHz
+================================
+Escribe H para ayuda
+
+>D 8000 20
+8000: A9 C0 8D 03 C0 A9 00 8D  01 C0 20 ...
+
+>L 0200
+:A9 3F 8D 01 C0 60.
+Cargados 0005 bytes
+
+>G 0200
+Ejecutando en $0200...
+Retorno de $0200
 ```
 
 ## Mapa de Memoria
@@ -87,12 +120,15 @@ while (1) {
 | Stack | $3E00-$3FFF | 512 bytes | Pila del sistema |
 | ROM | $8000-$9FF9 | 8 KB | Código del programa |
 | Vectores | $9FFA-$9FFF | 6 bytes | NMI, RESET, IRQ |
-| I/O | $C000-$C003 | 4 bytes | Puertos de E/S |
+| I/O | $C000-$C0FF | 256 bytes | Puertos de E/S |
 
-## Requisitos
+**RAM libre para programas:** `$0200-$3DFF` (~15 KB)
+
+## Dependencias
 
 - [cc65](https://cc65.github.io/) - Compilador C para 6502
-- Python 3 - Para el script bin2rom3.py
+- Python 3 - Para bin2rom3.py
+- Librería UART (repo separado)
 - FPGA Tang Nano 9K
 
 ## Licencia
